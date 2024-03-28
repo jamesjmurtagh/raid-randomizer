@@ -227,7 +227,7 @@ export default function Table() {
         return output;
     }
 
-    function genWinIndex() {
+    function genWinIndex(lastRole) {
         const i = Math.floor(Math.random() * specs.length);
         const spec = specs[i];
         let numberOfAssignedPlayersWithThisRole = 0;
@@ -238,7 +238,11 @@ export default function Table() {
             }
         }
 
-        console.log(spec.role)
+        if (lastRole == spec.role) {
+            numberOfAssignedPlayersWithThisRole++;
+        }
+
+        console.log(`There are already ${numberOfAssignedPlayersWithThisRole} with the role: ${spec.role}`)
         switch (spec.role) {
             case "Tank":
                 if (numberOfAssignedPlayersWithThisRole >= maxTanks) {
@@ -257,7 +261,7 @@ export default function Table() {
             //     break;
         }
 
-        return Math.floor(Math.random() * specs.length);
+        return i;
     }
 
     // Set state variable for playerAssignments
@@ -265,8 +269,10 @@ export default function Table() {
     const [specs, setSpecs] = useState(initSpecs);
     const [spin, setSpin] = useState(false);
     const [winIndex, setWinIndex] = useState(Math.floor(Math.random() * specs.length));
-    const [maxTanks, setMaxTanks] = useState(1);
-    const [maxHealers, setMaxHealers] = useState(1);
+    const winIndexRef = React.useRef(winIndex);
+    
+    const [maxTanks, setMaxTanks] = useState(2);
+    const [maxHealers, setMaxHealers] = useState(4);
     const [maxDps, setMaxDps] = useState(14);
 
     const handleEnterPress = (event) => {
@@ -295,10 +301,25 @@ export default function Table() {
         );
     });
 
-    const prizeNumber = Math.floor(Math.random() * specs.length);
+    console.log(`Max tanks: ${maxTanks}`);
+    console.log(`Max healers: ${maxHealers}`);
+    console.log(`Max dps: ${maxDps}`);
 
     return (
-        <div style={{display: "flex"}}>
+        <>
+        <div>
+            <div className="input-container">
+                <label htmlFor="numTanks">Tanks:</label>
+                <input value={maxTanks} type="number" id="numTanks" onChange={(e) => setMaxTanks(e.target.value)}/>
+                
+                <label htmlFor="numHealers">Healers:</label>
+                <input value={maxHealers} type="number" id="numHealers" onChange={(e) => setMaxHealers(e.target.value)}/>
+                
+                <label htmlFor="numDps">DPS:</label>
+                <input value={maxDps} type="number" id="numDps" onChange={(e) => setMaxDps(e.target.value)} />
+            </div>
+        </div>
+        <div style={{display: "flex", marginTop: "20px"}}>
             <div style={{flex: "auto", display: "flex", flexDirection: "column"}}>
                 <div>
                     <input type="text" id="nameInput" placeholder="Enter Name" onKeyDown={handleEnterPress}/>
@@ -317,14 +338,14 @@ export default function Table() {
             <div style={{flex: "auto"}}>
                 <Wheel 
                     mustStartSpinning={spin}
-                    prizeNumber={prizeNumber}
+                    prizeNumber={winIndex}
                     data={specs}
                     backgroundColors={['#3e3e3e', '#df3428']}
                     textColors={['#ffffff']}
                     onStopSpinning={() => {
                         setSpin(false);
                         const x = [];
-                        const spec = specs[prizeNumber];
+                        const spec = specs[winIndex];
                         const nameInput = document.getElementById('nameInput');
                         const name = nameInput.value;
 
@@ -340,21 +361,23 @@ export default function Table() {
 
                         setPlayerAssignments(x);
                         
-                        const newSpecs = [];
-                        for (let i = 0; i < specs.length; i++) {
-                            if (specs[i].option !== spec.option) {
-                                newSpecs.push(specs[i]);
-                            }
-                        }
-                        setSpecs(newSpecs);
+                        // const newSpecs = [];
+                        // for (let i = 0; i < specs.length; i++) {
+                        //     if (specs[i].option !== spec.option) {
+                        //         newSpecs.push(specs[i]);
+                        //     }
+                        // }
+                        // setSpecs(newSpecs);
+
                         nameInput.value = "";
                         nameInput.disabled = false;
 
-                        setWinIndex(genWinIndex());
+                        winIndexRef.current = genWinIndex(spec.role);
+                        setWinIndex(winIndexRef.current);
                     }}
                 />
             </div>
         </div>
-
+        </>
     );
 }
